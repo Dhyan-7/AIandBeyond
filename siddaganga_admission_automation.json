@@ -1,0 +1,396 @@
+{
+  "name": "Siddaganga College - Admission Enquiry Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "siddaganga-admission-enquiry",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "7c7e9a91-3a6d-4c2e-a4c5-91a5e16c2a01",
+      "name": "Admission Enquiry Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "siddaganga-admission-enquiry-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "let input = $json.body ?? $json;\nif (typeof input === 'string') {\n  try { input = JSON.parse(input); }\n  catch (e) { return [{ json: { valid: false, message: 'Invalid JSON request body.' } }]; }\n}\nif (!input || typeof input !== 'object' || Array.isArray(input)) {\n  return [{ json: { valid: false, message: 'Invalid form submission.' } }];\n}\nconst fullName = String(input.fullName ?? '').trim();\nconst email = String(input.email ?? '').trim();\nconst phone = String(input.phone ?? '').trim();\nconst course = String(input.course ?? '').trim();\nconst qualification = String(input.qualification ?? '').trim();\nconst admissionYear = String(input.admissionYear ?? '').trim();\nconst message = String(input.message ?? '').trim();\nconst emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nif (!fullName || !email || !phone || !course || !qualification || !admissionYear) {\n  return [{ json: { valid: false, message: 'Please complete all required fields.' } }];\n}\nif (!emailPattern.test(email)) {\n  return [{ json: { valid: false, message: 'Please provide a valid email address.' } }];\n}\nif (!/^[0-9+()\\s-]{8,18}$/.test(phone)) {\n  return [{ json: { valid: false, message: 'Please provide a valid phone number.' } }];\n}\nconst now = new Date();\nconst stamp = now.toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);\nconst random = Math.random().toString(36).slice(2, 6).toUpperCase();\nconst enquiryId = `SSC-${stamp}-${random}`;\nreturn [{\n  json: {\n    valid: true,\n    enquiryId,\n    submittedAt: now.toISOString(),\n    fullName,\n    email,\n    phone,\n    course,\n    qualification,\n    admissionYear,\n    message,\n    source: String(input.source ?? 'Siddaganga College Admission Portal'),\n    enquiryStatus: 'New',\n    emailStatus: 'Pending'\n  }\n}];"
+      },
+      "id": "a5ab7e88-38d9-4d9f-a28c-34c62d4c6a02",
+      "name": "Validate and Prepare Enquiry",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        470,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "valid-check",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b6bc8c11-2d4e-43e5-8f72-48d1e3c6a03",
+      "name": "Is Submission Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        690,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "PASTE_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Admission Enquiries",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Enquiry ID": "={{ $json.enquiryId }}",
+            "Submitted At": "={{ $json.submittedAt }}",
+            "Full Name": "={{ $json.fullName }}",
+            "Email Address": "={{ $json.email }}",
+            "Phone Number": "={{ $json.phone }}",
+            "Programme": "={{ $json.course }}",
+            "Qualification": "={{ $json.qualification }}",
+            "Admission Year": "={{ $json.admissionYear }}",
+            "Message": "={{ $json.message }}",
+            "Enquiry Status": "={{ $json.enquiryStatus }}",
+            "Email Status": "={{ $json.emailStatus }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Enquiry ID",
+              "displayName": "Enquiry ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Submitted At",
+              "displayName": "Submitted At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Programme",
+              "displayName": "Programme",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Qualification",
+              "displayName": "Qualification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admission Year",
+              "displayName": "Admission Year",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Enquiry Status",
+              "displayName": "Enquiry Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Status",
+              "displayName": "Email Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {},
+        "resource": "sheet"
+      },
+      "id": "c7d4a17f-49f5-4b29-bb22-b4b7d1b7a04",
+      "name": "Save Enquiry to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        930,
+        205
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SELECT_YOUR_GOOGLE_SHEETS_CREDENTIAL",
+          "name": "Select Google Sheets account"
+        }
+      },
+      "onError": "stopWorkflow"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Validate and Prepare Enquiry').item.json.email }}",
+        "subject": "Thank you for your admission enquiry - Sree Siddaganga College",
+        "emailType": "text",
+        "message": "=Dear {{ $('Validate and Prepare Enquiry').item.json.fullName }},\\n\\nThank you for your interest in Sree Siddaganga College of Arts, Science and Commerce. We have received your admission enquiry.\\n\\nEnquiry ID: {{ $('Validate and Prepare Enquiry').item.json.enquiryId }}\\nProgramme of interest: {{ $('Validate and Prepare Enquiry').item.json.course }}\\nAdmission year: {{ $('Validate and Prepare Enquiry').item.json.admissionYear }}\\n\\nThe college team can follow up with you about programme details and the admission process. Please contact the college directly for official eligibility and admission information.\\n\\nRegards,\\nAdmissions Enquiry Team",
+        "options": {},
+        "resource": "message",
+        "operation": "send"
+      },
+      "id": "d8e5d0ac-1e52-4c50-9a87-22e7d2e8b05",
+      "name": "Send Thank-You Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1160,
+        205
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SELECT_YOUR_GMAIL_CREDENTIAL",
+          "name": "Select Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Admission enquiry received.', enquiryId: $('Validate and Prepare Enquiry').item.json.enquiryId } }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "e9b6d2aa-30a5-46f2-88ac-21d9e1f6a06",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1400,
+        205
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, message: $json.message || 'Please check the required fields and try again.' } }}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "fab6a6b9-64ad-43b8-84b5-cf74c1d9a07",
+      "name": "Respond Validation Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        930,
+        440
+      ]
+    }
+  ],
+  "connections": {
+    "Admission Enquiry Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate and Prepare Enquiry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate and Prepare Enquiry": {
+      "main": [
+        [
+          {
+            "node": "Is Submission Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Submission Valid?": {
+      "main": [
+        [
+          {
+            "node": "Save Enquiry to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Enquiry to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Send Thank-You Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Thank-You Email": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "e6b3d81d-33d8-4b65-8b1c-6b5e5a5f7a08",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

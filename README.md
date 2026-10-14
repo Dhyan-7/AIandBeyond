@@ -1,18 +1,19 @@
-# Siddaganga College Portal — Concept Preview
+# Siddaganga College Admission Portal
 
-A responsive single-page college portal concept with an admission enquiry form.
+Static college portal concept with an admission enquiry form connected to an n8n webhook.
 
 ## Files
-- `index.html` — complete website (HTML, CSS, and JavaScript in one file)
+- `index.html` — complete website with responsive design and admission form.
+- `siddaganga_admission_automation.json` — starter n8n workflow.
 
-## Run locally
-Open `index.html` in a modern web browser. An internet connection is needed for the externally hosted fonts and campus imagery.
+## Webhook
+The form is configured to POST submissions to:
+`https://dhyan07.app.n8n.cloud/webhook/siddaganga-admission-enquiry`
 
-## Current form behaviour
-The form validates required fields in the browser and displays a preview message. It does **not** submit, transmit, or store enquiry data yet. The next development step is to connect the form to an n8n webhook and Google Sheets.
+Ensure the matching n8n workflow is active and its Google Sheets and Gmail credentials are configured before accepting real enquiries.
 
-## Publish
-This is a static website. It can be published from this repository using Netlify. Set the publish directory to the repository root; no build command is required.
+## Google Sheets headers
+Enquiry ID, Submitted At, Full Name, Email Address, Phone Number, Programme, Qualification, Admission Year, Message, Enquiry Status, Email Status
 
-## Note
-This is a concept redesign for demonstration and is not an official publication of Sree Siddaganga College of Arts, Science and Commerce. Verify programme names, accreditation claims, contact details, and other institutional facts with the college before public use.
+## Important
+The form sends data to the configured webhook. Successful recording and email delivery depend on the n8n workflow being correctly configured and active. Test with sample data before sharing the site publicly. The webhook URL is visible in the public website source; add suitable spam protection and rate limiting before production use. Verify college details and privacy/consent requirements before official use.

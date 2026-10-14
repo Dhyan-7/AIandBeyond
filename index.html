@@ -99,14 +99,55 @@ const submitBtn = document.getElementById('submitBtn');
 const submitLabel = document.getElementById('submitLabel');
 document.getElementById('yearNow').textContent = new Date().getFullYear();
 
-// Step 1 preview: validate locally, but do not transmit or store personal information yet.
-form.addEventListener('submit', (event) => {
+// Replace this placeholder with your ACTIVE n8n production webhook URL before going live.
+const N8N_WEBHOOK_URL = 'https://dhyan07.app.n8n.cloud/webhook/siddaganga-admission-enquiry';
+
+// Send the form to n8n. text/plain avoids a browser CORS preflight for this simple POST;
+// the n8n Code node parses the JSON body.
+form.addEventListener('submit', async (event) => {
   event.preventDefault();
   statusBox.className = 'form-status';
   if (!form.reportValidity()) return;
-  statusBox.textContent = 'The form looks good! This preview does not send or store enquiries yet. Next, we will connect this form to an n8n webhook and Google Sheets.';
-  statusBox.classList.add('success');
-  statusBox.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  if (!N8N_WEBHOOK_URL.startsWith('https://')) {
+    statusBox.textContent = 'The form is ready, but the n8n webhook URL has not been configured yet.';
+    statusBox.classList.add('error');
+    return;
+  }
+
+  const formData = new FormData(form);
+  const payload = Object.fromEntries(formData.entries());
+  delete payload.consent;
+  payload.source = 'Siddaganga College Netlify Admission Portal';
+
+  submitBtn.disabled = true;
+  submitLabel.textContent = 'Submitting enquiry…';
+  statusBox.textContent = '';
+  statusBox.className = 'form-status';
+
+  try {
+    const response = await fetch(N8N_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+
+    if (!response.ok || result.success !== true) {
+      throw new Error(result.message || 'We could not submit your enquiry. Please try again.');
+    }
+
+    statusBox.textContent = `Thank you, ${payload.fullName}. Your admission enquiry has been recorded. Enquiry ID: ${result.enquiryId || 'Received'}.`;
+    statusBox.classList.add('success');
+    form.reset();
+  } catch (error) {
+    statusBox.textContent = error.message || 'A network error occurred. Please try again or contact the college office.';
+    statusBox.classList.add('error');
+  } finally {
+    submitBtn.disabled = false;
+    submitLabel.textContent = 'Submit admission enquiry';
+    statusBox.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
 });
 
 // Selecting a programme from a card pre-fills the enquiry form.
